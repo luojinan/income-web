@@ -51,6 +51,12 @@ function HomePage() {
             >
               打开 Supabase CRUD 示例
             </Link>
+            <Link
+              to="/income"
+              className="text-primary rounded-lg border px-3 py-1.5 text-sm transition-colors hover:bg-muted"
+            >
+              收入数据图表
+            </Link>
           </div>
         </header>
 

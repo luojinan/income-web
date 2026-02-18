@@ -11,7 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SupabaseRouteImport } from './routes/supabase'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as ComponentsDemoRouteImport } from './routes/components-demo'
+import { Route as IncomeRouteImport } from './routes/income'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SupabaseRoute = SupabaseRouteImport.update({
@@ -24,9 +24,9 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ComponentsDemoRoute = ComponentsDemoRouteImport.update({
-  id: '/components-demo',
-  path: '/components-demo',
+const IncomeRoute = IncomeRouteImport.update({
+  id: '/income',
+  path: '/income',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,34 +37,34 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/components-demo': typeof ComponentsDemoRoute
+  '/income': typeof IncomeRoute
   '/login': typeof LoginRoute
   '/supabase': typeof SupabaseRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/components-demo': typeof ComponentsDemoRoute
+  '/income': typeof IncomeRoute
   '/login': typeof LoginRoute
   '/supabase': typeof SupabaseRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/components-demo': typeof ComponentsDemoRoute
+  '/income': typeof IncomeRoute
   '/login': typeof LoginRoute
   '/supabase': typeof SupabaseRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/components-demo' | '/login' | '/supabase'
+  fullPaths: '/' | '/income' | '/login' | '/supabase'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/components-demo' | '/login' | '/supabase'
-  id: '__root__' | '/' | '/components-demo' | '/login' | '/supabase'
+  to: '/' | '/income' | '/login' | '/supabase'
+  id: '__root__' | '/' | '/income' | '/login' | '/supabase'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ComponentsDemoRoute: typeof ComponentsDemoRoute
+  IncomeRoute: typeof IncomeRoute
   LoginRoute: typeof LoginRoute
   SupabaseRoute: typeof SupabaseRoute
 }
@@ -85,11 +85,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/components-demo': {
-      id: '/components-demo'
-      path: '/components-demo'
-      fullPath: '/components-demo'
-      preLoaderRoute: typeof ComponentsDemoRouteImport
+    '/income': {
+      id: '/income'
+      path: '/income'
+      fullPath: '/income'
+      preLoaderRoute: typeof IncomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -104,7 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ComponentsDemoRoute: ComponentsDemoRoute,
+  IncomeRoute: IncomeRoute,
   LoginRoute: LoginRoute,
   SupabaseRoute: SupabaseRoute,
 }
