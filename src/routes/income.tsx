@@ -38,7 +38,7 @@ function IncomePage() {
 
   const records = data ?? [];
 
-  const [timeRange, setTimeRange] = useState("all");
+  const [timeRange, setTimeRange] = useState("6m");
 
   const availableYears = useMemo(() => {
     const years = new Set(records.map((r) => new Date(r.time).getFullYear()));
@@ -74,7 +74,7 @@ function IncomePage() {
 
   return (
     <main className="min-h-screen">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-2 py-8 sm:px-6 sm:py-10">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             收入数据

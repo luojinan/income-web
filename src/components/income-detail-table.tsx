@@ -1,3 +1,7 @@
+import { ArrowDown01Icon, ArrowUp01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -15,7 +19,19 @@ import {
 } from "@/components/ui/table";
 import type { IncomeRecord } from "@/lib/income";
 
+const COLLAPSED_ROW_COUNT = 6;
+
 export function IncomeDetailTable({ data }: { data: IncomeRecord[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const reversedData = useMemo(() => data.slice().reverse(), [data]);
+
+  const displayData = expanded
+    ? reversedData
+    : reversedData.slice(0, COLLAPSED_ROW_COUNT);
+
+  const showToggle = reversedData.length > COLLAPSED_ROW_COUNT;
+
   return (
     <Card>
       <CardHeader>
@@ -40,7 +56,7 @@ export function IncomeDetailTable({ data }: { data: IncomeRecord[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((record) => (
+            {displayData.map((record) => (
               <TableRow key={record.id}>
                 <TableCell className="font-medium">
                   {new Date(record.time).toLocaleDateString("zh-CN", {
@@ -82,6 +98,32 @@ export function IncomeDetailTable({ data }: { data: IncomeRecord[] }) {
             ))}
           </TableBody>
         </Table>
+        {showToggle && (
+          <div className="mt-4 flex justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setExpanded((prev) => !prev);
+              }}
+            >
+              {expanded ? (
+                <>
+                  收起
+                  <HugeiconsIcon icon={ArrowUp01Icon} className="ml-1 size-4" />
+                </>
+              ) : (
+                <>
+                  展开全部 (共 {reversedData.length} 条)
+                  <HugeiconsIcon
+                    icon={ArrowDown01Icon}
+                    className="ml-1 size-4"
+                  />
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
