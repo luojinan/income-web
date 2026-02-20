@@ -1,64 +1,89 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { ExpenseBreakdownChart } from "@/components/expense-breakdown-chart";
+import { IncomeBreakdownChart } from "@/components/income-breakdown-chart";
+import { IncomeDetailTable } from "@/components/income-detail-table";
+import { IncomeExpenseChart } from "@/components/income-expense-chart";
+import { TimeRangeSelect } from "@/components/time-range-select";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
-  fetchNavigationLinks,
-  NAVIGATION_LINKS_QUERY_KEY,
-} from "@/lib/navigation";
+  fetchIncomeRecords,
+  INCOME_QUERY_KEY,
+  transformToChartData,
+  transformToExpenseBreakdownData,
+  transformToIncomeBreakdownData,
+} from "@/lib/income";
 import { supabase } from "@/lib/supabase-client";
 
-export const Route = createFileRoute("/")({ component: HomePage });
+export const Route = createFileRoute("/")({ component: IncomeHomePage });
 
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "";
-}
-
-function HomePage() {
+function IncomeHomePage() {
   const {
     isLoading: loading,
     data,
     error: queryError,
     refetch,
   } = useQuery({
-    queryKey: NAVIGATION_LINKS_QUERY_KEY,
-    queryFn: () => fetchNavigationLinks(supabase),
+    queryKey: INCOME_QUERY_KEY,
+    queryFn: () => fetchIncomeRecords(supabase),
   });
 
-  const links = data ?? [];
-  const error = getErrorMessage(queryError);
+  const records = data ?? [];
+  const [timeRange, setTimeRange] = useState("6m");
+
+  const availableYears = useMemo(() => {
+    const years = new Set(records.map((r) => new Date(r.time).getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [records]);
+
+  const filteredRecords = useMemo(() => {
+    if (timeRange === "all") return records;
+
+    if (timeRange.endsWith("m")) {
+      const count = parseInt(timeRange, 10);
+      return records.slice(-count);
+    }
+
+    const year = parseInt(timeRange, 10);
+    return records.filter((r) => new Date(r.time).getFullYear() === year);
+  }, [records, timeRange]);
+
+  const chartData = useMemo(
+    () => transformToChartData(filteredRecords),
+    [filteredRecords],
+  );
+  const incomeBreakdownData = useMemo(
+    () => transformToIncomeBreakdownData(filteredRecords),
+    [filteredRecords],
+  );
+  const expenseBreakdownData = useMemo(
+    () => transformToExpenseBreakdownData(filteredRecords),
+    [filteredRecords],
+  );
+
+  const error = queryError instanceof Error ? queryError.message : "";
 
   return (
     <main className="min-h-screen">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
-        <header className="space-y-3">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-2 py-8 sm:px-6 sm:py-10">
+        <div className="flex items-center justify-between">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            导航首页
+            收入数据
           </h1>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              to="/supabase"
-              className="text-primary rounded-lg border px-3 py-1.5 text-sm transition-colors hover:bg-muted"
-            >
-              打开 Supabase CRUD 示例
-            </Link>
-            <Link
-              to="/income"
-              className="text-primary rounded-lg border px-3 py-1.5 text-sm transition-colors hover:bg-muted"
-            >
-              收入数据图表
-            </Link>
-          </div>
-        </header>
+          <TimeRangeSelect
+            value={timeRange}
+            onValueChange={setTimeRange}
+            availableYears={availableYears}
+          />
+        </div>
 
         {error && (
           <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -76,31 +101,34 @@ function HomePage() {
         )}
 
         {loading && (
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }, (_, index) => (
+          <div className="flex flex-col gap-6">
+            {Array.from({ length: 3 }, (_, index) => (
               <div
                 key={index}
-                className="bg-card h-36 animate-pulse rounded-xl border"
+                className="bg-card h-64 animate-pulse rounded-xl border"
               />
             ))}
-          </section>
+          </div>
         )}
 
-        {!loading && !error && links.length > 0 && (
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {links.map((item) => (
-              <a key={item.id} href={item.url} target="_blank" rel="noreferrer">
-                <Card className="h-full border-border/70 bg-card/85 transition-colors hover:bg-muted/50">
-                  <CardHeader>
-                    <CardTitle className="break-words">{item.title}</CardTitle>
-                    <CardDescription className="break-all text-xs">
-                      {item.url}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-              </a>
-            ))}
-          </section>
+        {!loading && !error && filteredRecords.length > 0 && (
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>收支总览</CardTitle>
+                <CardDescription>每月收入与支出对比</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <IncomeExpenseChart data={chartData} />
+              </CardContent>
+            </Card>
+
+            <IncomeBreakdownChart data={incomeBreakdownData} />
+
+            <ExpenseBreakdownChart data={expenseBreakdownData} />
+
+            <IncomeDetailTable data={filteredRecords} />
+          </div>
         )}
       </div>
     </main>

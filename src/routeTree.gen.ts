@@ -9,26 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SupabaseRouteImport } from './routes/supabase'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as IncomeRouteImport } from './routes/income'
 import { Route as IndexRouteImport } from './routes/index'
 
-const SupabaseRoute = SupabaseRouteImport.update({
-  id: '/supabase',
-  path: '/supabase',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IncomeRoute = IncomeRouteImport.update({
-  id: '/income',
-  path: '/income',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,61 +19,28 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/income': typeof IncomeRoute
-  '/login': typeof LoginRoute
-  '/supabase': typeof SupabaseRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/income': typeof IncomeRoute
-  '/login': typeof LoginRoute
-  '/supabase': typeof SupabaseRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/income': typeof IncomeRoute
-  '/login': typeof LoginRoute
-  '/supabase': typeof SupabaseRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/income' | '/login' | '/supabase'
+  fullPaths: '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/income' | '/login' | '/supabase'
-  id: '__root__' | '/' | '/income' | '/login' | '/supabase'
+  to: '/'
+  id: '__root__' | '/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  IncomeRoute: typeof IncomeRoute
-  LoginRoute: typeof LoginRoute
-  SupabaseRoute: typeof SupabaseRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/supabase': {
-      id: '/supabase'
-      path: '/supabase'
-      fullPath: '/supabase'
-      preLoaderRoute: typeof SupabaseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/income': {
-      id: '/income'
-      path: '/income'
-      fullPath: '/income'
-      preLoaderRoute: typeof IncomeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -104,9 +53,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  IncomeRoute: IncomeRoute,
-  LoginRoute: LoginRoute,
-  SupabaseRoute: SupabaseRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
