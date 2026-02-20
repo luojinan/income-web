@@ -128,15 +128,17 @@ export function calculateIncomeSummary(
 
 export function transformToChartData(records: IncomeRecord[]) {
   return records.map((record) => {
-    const income = calculateGrossIncome(record);
-
+    const incomeGross = calculateGrossIncome(record);
     const expense = calculateExpense(record);
+    // Keep stacked view but use net income as bar value so y-axis reflects net.
+    const income = incomeGross - expense;
 
     return {
       month: new Date(record.time).toLocaleDateString("zh-CN", {
         month: "short",
       }),
       income,
+      incomeGross,
       expense,
     };
   });

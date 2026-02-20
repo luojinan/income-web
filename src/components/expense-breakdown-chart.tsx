@@ -1,4 +1,4 @@
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
@@ -12,6 +12,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { formatCompactNumber } from "@/lib/utils";
 
 interface ExpenseBreakdownChartProps {
   data: {
@@ -61,13 +62,19 @@ export function ExpenseBreakdownChart({ data }: ExpenseBreakdownChartProps) {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>
-          <LineChart data={data} margin={{ left: 12, right: 12 }}>
+          <LineChart data={data} margin={{ left: 24, right: 12 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="month"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={formatCompactNumber}
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Line
