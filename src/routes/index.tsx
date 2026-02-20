@@ -5,6 +5,7 @@ import { ExpenseBreakdownChart } from "@/components/expense-breakdown-chart";
 import { IncomeBreakdownChart } from "@/components/income-breakdown-chart";
 import { IncomeDetailTable } from "@/components/income-detail-table";
 import { IncomeExpenseChart } from "@/components/income-expense-chart";
+import { IncomeSummaryCard } from "@/components/income-summary-card";
 import { TimeRangeSelect } from "@/components/time-range-select";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  calculateIncomeSummary,
   fetchIncomeRecords,
   INCOME_QUERY_KEY,
   transformToChartData,
@@ -68,21 +70,17 @@ function IncomeHomePage() {
     () => transformToExpenseBreakdownData(filteredRecords),
     [filteredRecords],
   );
+  const summary = useMemo(() => calculateIncomeSummary(records), [records]);
 
   const error = queryError instanceof Error ? queryError.message : "";
 
   return (
     <main className="min-h-screen">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-2 py-8 sm:px-6 sm:py-10">
-        <div className="flex items-center justify-between">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-2 pb-8 sm:px-6 sm:pb-10">
+        <div className="flex items-center">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             收入数据
           </h1>
-          <TimeRangeSelect
-            value={timeRange}
-            onValueChange={setTimeRange}
-            availableYears={availableYears}
-          />
         </div>
 
         {error && (
@@ -111,23 +109,37 @@ function IncomeHomePage() {
           </div>
         )}
 
-        {!loading && !error && filteredRecords.length > 0 && (
+        {!loading && !error && (
           <div className="flex flex-col gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>收支总览</CardTitle>
-                <CardDescription>每月收入与支出对比</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <IncomeExpenseChart data={chartData} />
-              </CardContent>
-            </Card>
+            <IncomeSummaryCard summary={summary} />
 
-            <IncomeBreakdownChart data={incomeBreakdownData} />
+            <div className="flex justify-end">
+              <TimeRangeSelect
+                value={timeRange}
+                onValueChange={setTimeRange}
+                availableYears={availableYears}
+              />
+            </div>
 
-            <ExpenseBreakdownChart data={expenseBreakdownData} />
+            {filteredRecords.length > 0 && (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>收支总览</CardTitle>
+                    <CardDescription>每月收入与支出对比</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <IncomeExpenseChart data={chartData} />
+                  </CardContent>
+                </Card>
 
-            <IncomeDetailTable data={filteredRecords} />
+                <IncomeBreakdownChart data={incomeBreakdownData} />
+
+                <ExpenseBreakdownChart data={expenseBreakdownData} />
+
+                <IncomeDetailTable data={filteredRecords} />
+              </>
+            )}
           </div>
         )}
       </div>

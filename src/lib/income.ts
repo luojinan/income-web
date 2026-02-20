@@ -16,6 +16,16 @@ export type IncomeRecord = {
   rent: number;
 };
 
+export type IncomeSummaryStats = {
+  rangeTitle: string;
+  totalNetIncome: number;
+  totalGrossIncome: number;
+  totalExpense: number;
+  avgMonthlyNetIncome: number;
+  estimatedAnnualNetIncome: number;
+  estimatedAnnualGrossIncome: number;
+};
+
 type SupabaseBrowserClient = typeof supabase;
 
 const INCOME_TABLE = "income";
@@ -35,25 +45,92 @@ export async function fetchIncomeRecords(supabase: SupabaseBrowserClient) {
   return (data ?? []) as IncomeRecord[];
 }
 
+function getPositive(value: number) {
+  return value > 0 ? value : 0;
+}
+
+function getNegative(value: number) {
+  return value < 0 ? value : 0;
+}
+
+function calculateGrossIncome(record: IncomeRecord) {
+  return (
+    getPositive(record.base_salary) +
+    getPositive(record.overtime_meal) +
+    getPositive(record.housing_fund) +
+    getPositive(record.leave_deduction)
+  );
+}
+
+function calculateExpense(record: IncomeRecord) {
+  return Math.abs(
+    getNegative(record.housing_fund_deduction) +
+      getNegative(record.medical_insurance) +
+      getNegative(record.pension_insurance) +
+      getNegative(record.unemployment_insurance) +
+      getNegative(record.tax) +
+      getNegative(record.rent) +
+      getNegative(record.leave_deduction),
+  );
+}
+
+function formatRangeMonth(date: Date) {
+  return `${date.getFullYear()}年${String(date.getMonth() + 1).padStart(2, "0")}月`;
+}
+
+export function calculateIncomeSummary(
+  records: IncomeRecord[],
+): IncomeSummaryStats | null {
+  if (records.length === 0) {
+    return null;
+  }
+
+  let earliest = new Date(records[0].time);
+  let latest = new Date(records[0].time);
+
+  const totals = records.reduce(
+    (acc, record) => {
+      const date = new Date(record.time);
+      if (date < earliest) {
+        earliest = date;
+      }
+      if (date > latest) {
+        latest = date;
+      }
+
+      const grossIncome = calculateGrossIncome(record);
+      const expense = calculateExpense(record);
+
+      return {
+        totalGrossIncome: acc.totalGrossIncome + grossIncome,
+        totalExpense: acc.totalExpense + expense,
+      };
+    },
+    {
+      totalGrossIncome: 0,
+      totalExpense: 0,
+    },
+  );
+
+  const totalNetIncome = totals.totalGrossIncome - totals.totalExpense;
+  const avgMonthlyNetIncome = totalNetIncome / records.length;
+
+  return {
+    rangeTitle: `${formatRangeMonth(earliest)}-${formatRangeMonth(latest)}(${records.length})`,
+    totalNetIncome,
+    totalGrossIncome: totals.totalGrossIncome,
+    totalExpense: totals.totalExpense,
+    avgMonthlyNetIncome,
+    estimatedAnnualNetIncome: avgMonthlyNetIncome * 12,
+    estimatedAnnualGrossIncome: (totals.totalGrossIncome / records.length) * 12,
+  };
+}
+
 export function transformToChartData(records: IncomeRecord[]) {
   return records.map((record) => {
-    const income =
-      (record.base_salary > 0 ? record.base_salary : 0) +
-      (record.overtime_meal > 0 ? record.overtime_meal : 0) +
-      (record.housing_fund > 0 ? record.housing_fund : 0) +
-      (record.leave_deduction > 0 ? record.leave_deduction : 0);
+    const income = calculateGrossIncome(record);
 
-    const expense = Math.abs(
-      (record.housing_fund_deduction < 0 ? record.housing_fund_deduction : 0) +
-        (record.medical_insurance < 0 ? record.medical_insurance : 0) +
-        (record.pension_insurance < 0 ? record.pension_insurance : 0) +
-        (record.unemployment_insurance < 0
-          ? record.unemployment_insurance
-          : 0) +
-        (record.tax < 0 ? record.tax : 0) +
-        (record.rent < 0 ? record.rent : 0) +
-        (record.leave_deduction < 0 ? record.leave_deduction : 0),
-    );
+    const expense = calculateExpense(record);
 
     return {
       month: new Date(record.time).toLocaleDateString("zh-CN", {
