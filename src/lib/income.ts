@@ -130,14 +130,13 @@ export function transformToChartData(records: IncomeRecord[]) {
   return records.map((record) => {
     const incomeGross = calculateGrossIncome(record);
     const expense = calculateExpense(record);
-    // Keep stacked view but use net income as bar value so y-axis reflects net.
-    const income = incomeGross - expense;
+    const netIncome = incomeGross - expense;
 
     return {
       month: new Date(record.time).toLocaleDateString("zh-CN", {
         month: "short",
       }),
-      income,
+      netIncome,
       incomeGross,
       expense,
     };
@@ -153,7 +152,6 @@ export function transformToIncomeBreakdownData(records: IncomeRecord[]) {
     base_salary: record.base_salary,
     overtime_meal: record.overtime_meal,
     housing_fund: record.housing_fund,
-    leave_deduction: record.leave_deduction >= 0 ? record.leave_deduction : 0,
   }));
 }
 
@@ -163,6 +161,7 @@ export function transformToExpenseBreakdownData(records: IncomeRecord[]) {
       year: "numeric",
       month: "2-digit",
     }),
+    leave_deduction: Math.abs(record.leave_deduction),
     housing_fund_deduction: Math.abs(record.housing_fund_deduction),
     medical_insurance: Math.abs(record.medical_insurance),
     pension_insurance: Math.abs(record.pension_insurance),

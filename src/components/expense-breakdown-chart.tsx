@@ -17,6 +17,7 @@ import { formatCompactNumber } from "@/lib/utils";
 interface ExpenseBreakdownChartProps {
   data: {
     month: string;
+    leave_deduction: number;
     housing_fund_deduction: number;
     medical_insurance: number;
     pension_insurance: number;
@@ -27,29 +28,33 @@ interface ExpenseBreakdownChartProps {
 }
 
 const chartConfig = {
+  leave_deduction: {
+    label: "请假扣款",
+    color: "var(--chart-1)",
+  },
   housing_fund_deduction: {
     label: "公积金",
-    color: "var(--chart-1)",
+    color: "var(--chart-2)",
   },
   medical_insurance: {
     label: "医保",
-    color: "var(--chart-2)",
+    color: "var(--chart-3)",
   },
   pension_insurance: {
     label: "养老保险",
-    color: "var(--chart-3)",
+    color: "var(--chart-4)",
   },
   unemployment_insurance: {
     label: "失业保险",
-    color: "var(--chart-4)",
+    color: "var(--chart-5)",
   },
   tax: {
     label: "个税",
-    color: "var(--chart-5)",
+    color: "var(--chart-1)",
   },
   rent: {
     label: "房租",
-    color: "var(--chart-1)",
+    color: "var(--chart-2)",
   },
 } satisfies ChartConfig;
 
@@ -77,6 +82,13 @@ export function ExpenseBreakdownChart({ data }: ExpenseBreakdownChartProps) {
               tickFormatter={formatCompactNumber}
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+            <Line
+              dataKey="leave_deduction"
+              type="linear"
+              stroke="var(--color-leave_deduction)"
+              strokeWidth={2}
+              dot={false}
+            />
             <Line
               dataKey="housing_fund_deduction"
               type="linear"

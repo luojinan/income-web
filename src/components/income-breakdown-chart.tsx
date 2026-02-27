@@ -20,7 +20,6 @@ interface IncomeBreakdownChartProps {
     base_salary: number;
     overtime_meal: number;
     housing_fund: number;
-    leave_deduction: number;
   }[];
 }
 
@@ -36,10 +35,6 @@ const chartConfig = {
   housing_fund: {
     label: "住房公积金",
     color: "var(--chart-3)",
-  },
-  leave_deduction: {
-    label: "请假扣款",
-    color: "var(--chart-4)",
   },
 } satisfies ChartConfig;
 
@@ -85,13 +80,6 @@ export function IncomeBreakdownChart({ data }: IncomeBreakdownChartProps) {
               dataKey="housing_fund"
               type="linear"
               stroke="var(--color-housing_fund)"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              dataKey="leave_deduction"
-              type="linear"
-              stroke="var(--color-leave_deduction)"
               strokeWidth={2}
               dot={false}
             />
