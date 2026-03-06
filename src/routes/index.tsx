@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { AnnualBonusTable } from "@/components/annual-bonus-table";
 import { ExpenseBreakdownChart } from "@/components/expense-breakdown-chart";
 import { IncomeBreakdownChart } from "@/components/income-breakdown-chart";
 import { IncomeDetailTable } from "@/components/income-detail-table";
@@ -15,6 +16,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  ANNUAL_BONUS_QUERY_KEY,
+  fetchAnnualBonusRecords,
+} from "@/lib/annual-bonus";
 import {
   calculateIncomeSummary,
   fetchIncomeRecords,
@@ -37,8 +42,18 @@ function IncomeHomePage() {
     queryKey: INCOME_QUERY_KEY,
     queryFn: () => fetchIncomeRecords(supabase),
   });
+  const {
+    isLoading: annualBonusLoading,
+    data: annualBonusData,
+    error: annualBonusQueryError,
+    refetch: refetchAnnualBonus,
+  } = useQuery({
+    queryKey: ANNUAL_BONUS_QUERY_KEY,
+    queryFn: () => fetchAnnualBonusRecords(supabase),
+  });
 
   const records = data ?? [];
+  const annualBonusRecords = annualBonusData ?? [];
   const [timeRange, setTimeRange] = useState("6m");
 
   const availableYears = useMemo(() => {
@@ -73,6 +88,8 @@ function IncomeHomePage() {
   const summary = useMemo(() => calculateIncomeSummary(records), [records]);
 
   const error = queryError instanceof Error ? queryError.message : "";
+  const annualBonusError =
+    annualBonusQueryError instanceof Error ? annualBonusQueryError.message : "";
 
   return (
     <main className="min-h-screen">
@@ -136,9 +153,20 @@ function IncomeHomePage() {
                 <IncomeBreakdownChart data={incomeBreakdownData} />
 
                 <ExpenseBreakdownChart data={expenseBreakdownData} />
-
-                <IncomeDetailTable data={filteredRecords} />
               </>
+            )}
+
+            <AnnualBonusTable
+              data={annualBonusRecords}
+              loading={annualBonusLoading}
+              error={annualBonusError}
+              onRetry={() => {
+                refetchAnnualBonus();
+              }}
+            />
+
+            {filteredRecords.length > 0 && (
+              <IncomeDetailTable data={filteredRecords} />
             )}
           </div>
         )}
