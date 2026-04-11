@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnnualBonusTable } from "@/components/annual-bonus-table";
 import { ExpenseBreakdownChart } from "@/components/expense-breakdown-chart";
 import { IncomeBreakdownChart } from "@/components/income-breakdown-chart";
 import { IncomeDetailTable } from "@/components/income-detail-table";
 import { IncomeExpenseChart } from "@/components/income-expense-chart";
+import { IncomeSourceTabs } from "@/components/income-source-tabs";
 import { IncomeSummaryCard } from "@/components/income-summary-card";
 import { TimeRangeSelect } from "@/components/time-range-select";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,10 @@ import {
 import {
   calculateIncomeSummary,
   fetchIncomeRecords,
-  INCOME_QUERY_KEY,
+  getIncomeQueryKey,
+  INCOME_SOURCES,
+  INCOME_SOURCE_MAP,
+  type IncomeSourceId,
   transformToChartData,
   transformToExpenseBreakdownData,
   transformToIncomeBreakdownData,
@@ -32,15 +36,31 @@ import { supabase } from "@/lib/supabase-client";
 
 export const Route = createFileRoute("/")({ component: IncomeHomePage });
 
+const INCOME_SOURCE_STORAGE_KEY = "income:selected-source-tab";
+
 function IncomeHomePage() {
+  const [sourceId, setSourceId] = useState<IncomeSourceId>("luo");
+  const [hasLoadedStoredSource, setHasLoadedStoredSource] = useState(false);
+  const [timeRange, setTimeRange] = useState("6m");
+  const activeSource = INCOME_SOURCE_MAP[sourceId];
+
   const {
-    isLoading: loading,
-    data,
-    error: queryError,
-    refetch,
+    isLoading: luoLoading,
+    data: luoData,
+    error: luoQueryError,
+    refetch: refetchLuo,
   } = useQuery({
-    queryKey: INCOME_QUERY_KEY,
-    queryFn: () => fetchIncomeRecords(supabase),
+    queryKey: getIncomeQueryKey("luo"),
+    queryFn: () => fetchIncomeRecords(supabase, "luo"),
+  });
+  const {
+    isLoading: xinLoading,
+    data: xinData,
+    error: xinQueryError,
+    refetch: refetchXin,
+  } = useQuery({
+    queryKey: getIncomeQueryKey("xin"),
+    queryFn: () => fetchIncomeRecords(supabase, "xin"),
   });
   const {
     isLoading: annualBonusLoading,
@@ -52,17 +72,31 @@ function IncomeHomePage() {
     queryFn: () => fetchAnnualBonusRecords(supabase),
   });
 
-  const records = data ?? [];
-  const annualBonusRecords = annualBonusData ?? [];
-  const [timeRange, setTimeRange] = useState("6m");
+  const records = sourceId === "luo" ? (luoData ?? []) : (xinData ?? []);
+  const loading = sourceId === "luo" ? luoLoading : xinLoading;
+  const refetch = sourceId === "luo" ? refetchLuo : refetchXin;
+  const queryError = sourceId === "luo" ? luoQueryError : xinQueryError;
 
   const availableYears = useMemo(() => {
     const years = new Set(records.map((r) => new Date(r.time).getFullYear()));
     return Array.from(years).sort((a, b) => b - a);
   }, [records]);
 
+  useEffect(() => {
+    if (timeRange === "all" || timeRange.endsWith("m")) {
+      return;
+    }
+
+    const year = Number(timeRange);
+    if (!availableYears.includes(year)) {
+      setTimeRange("6m");
+    }
+  }, [availableYears, timeRange]);
+
   const filteredRecords = useMemo(() => {
-    if (timeRange === "all") return records;
+    if (timeRange === "all") {
+      return records;
+    }
 
     if (timeRange.endsWith("m")) {
       const count = parseInt(timeRange, 10);
@@ -78,26 +112,75 @@ function IncomeHomePage() {
     [filteredRecords],
   );
   const incomeBreakdownData = useMemo(
-    () => transformToIncomeBreakdownData(filteredRecords),
-    [filteredRecords],
+    () =>
+      transformToIncomeBreakdownData(
+        filteredRecords,
+        activeSource.incomeMetrics,
+      ),
+    [activeSource.incomeMetrics, filteredRecords],
   );
   const expenseBreakdownData = useMemo(
-    () => transformToExpenseBreakdownData(filteredRecords),
-    [filteredRecords],
+    () =>
+      transformToExpenseBreakdownData(
+        filteredRecords,
+        activeSource.expenseMetrics,
+      ),
+    [activeSource.expenseMetrics, filteredRecords],
   );
   const summary = useMemo(() => calculateIncomeSummary(records), [records]);
+  const annualBonusRecords = useMemo(
+    () =>
+      (annualBonusData ?? []).filter(
+        (record) => record.owner === activeSource.owner,
+      ),
+    [activeSource.owner, annualBonusData],
+  );
 
   const error = queryError instanceof Error ? queryError.message : "";
   const annualBonusError =
     annualBonusQueryError instanceof Error ? annualBonusQueryError.message : "";
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storedSourceId = window.localStorage.getItem(
+      INCOME_SOURCE_STORAGE_KEY,
+    );
+    const matchedSource = INCOME_SOURCES.find(
+      (source) => source.id === storedSourceId,
+    );
+
+    if (matchedSource) {
+      setSourceId(matchedSource.id);
+    }
+
+    setHasLoadedStoredSource(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedStoredSource || typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(INCOME_SOURCE_STORAGE_KEY, sourceId);
+  }, [hasLoadedStoredSource, sourceId]);
+
   return (
     <main className="min-h-screen">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-2 pb-8 sm:px-6 sm:pb-10">
-        <div className="flex items-center">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            收入数据
-          </h1>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              收入数据
+            </h1>
+          </div>
+          <IncomeSourceTabs
+            sources={INCOME_SOURCES}
+            value={sourceId}
+            onValueChange={setSourceId}
+          />
         </div>
 
         {error && (
@@ -150,9 +233,15 @@ function IncomeHomePage() {
                   </CardContent>
                 </Card>
 
-                <IncomeBreakdownChart data={incomeBreakdownData} />
+                <IncomeBreakdownChart
+                  data={incomeBreakdownData}
+                  metrics={activeSource.incomeMetrics}
+                />
 
-                <ExpenseBreakdownChart data={expenseBreakdownData} />
+                <ExpenseBreakdownChart
+                  data={expenseBreakdownData}
+                  metrics={activeSource.expenseMetrics}
+                />
               </>
             )}
 
@@ -166,7 +255,11 @@ function IncomeHomePage() {
             />
 
             {filteredRecords.length > 0 && (
-              <IncomeDetailTable data={filteredRecords} />
+              <IncomeDetailTable
+                key={sourceId}
+                data={filteredRecords}
+                columns={activeSource.detailColumns}
+              />
             )}
           </div>
         )}

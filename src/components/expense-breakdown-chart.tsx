@@ -12,53 +12,40 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import type { IncomeMetricDefinition } from "@/lib/income";
 import { formatCompactNumber } from "@/lib/utils";
 
 interface ExpenseBreakdownChartProps {
-  data: {
-    month: string;
-    leave_deduction: number;
-    housing_fund_deduction: number;
-    medical_insurance: number;
-    pension_insurance: number;
-    unemployment_insurance: number;
-    tax: number;
-    rent: number;
-  }[];
+  data: Array<Record<string, number | string>>;
+  metrics: IncomeMetricDefinition[];
 }
 
-const chartConfig = {
-  leave_deduction: {
-    label: "请假扣款",
-    color: "var(--chart-1)",
-  },
-  housing_fund_deduction: {
-    label: "公积金",
-    color: "var(--chart-2)",
-  },
-  medical_insurance: {
-    label: "医保",
-    color: "var(--chart-3)",
-  },
-  pension_insurance: {
-    label: "养老保险",
-    color: "var(--chart-4)",
-  },
-  unemployment_insurance: {
-    label: "失业保险",
-    color: "var(--chart-5)",
-  },
-  tax: {
-    label: "个税",
-    color: "var(--chart-1)",
-  },
-  rent: {
-    label: "房租",
-    color: "var(--chart-2)",
-  },
-} satisfies ChartConfig;
+const chartColors = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "#0f766e",
+  "#c2410c",
+  "#be185d",
+  "#4338ca",
+];
 
-export function ExpenseBreakdownChart({ data }: ExpenseBreakdownChartProps) {
+export function ExpenseBreakdownChart({
+  data,
+  metrics,
+}: ExpenseBreakdownChartProps) {
+  const chartConfig = Object.fromEntries(
+    metrics.map((metric, index) => [
+      metric.key,
+      {
+        label: metric.label,
+        color: chartColors[index % chartColors.length],
+      },
+    ]),
+  ) satisfies ChartConfig;
+
   return (
     <Card>
       <CardHeader>
@@ -82,56 +69,17 @@ export function ExpenseBreakdownChart({ data }: ExpenseBreakdownChartProps) {
               tickFormatter={formatCompactNumber}
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            <Line
-              dataKey="leave_deduction"
-              type="linear"
-              stroke="var(--color-leave_deduction)"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              dataKey="housing_fund_deduction"
-              type="linear"
-              stroke="var(--color-housing_fund_deduction)"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              dataKey="medical_insurance"
-              type="linear"
-              stroke="var(--color-medical_insurance)"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              dataKey="pension_insurance"
-              type="linear"
-              stroke="var(--color-pension_insurance)"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              dataKey="unemployment_insurance"
-              type="linear"
-              stroke="var(--color-unemployment_insurance)"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              dataKey="tax"
-              type="linear"
-              stroke="var(--color-tax)"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              dataKey="rent"
-              type="linear"
-              stroke="var(--color-rent)"
-              strokeWidth={2}
-              dot={false}
-              strokeDasharray="5 5"
-            />
+            {metrics.map((metric) => (
+              <Line
+                key={metric.key}
+                dataKey={metric.key}
+                type="linear"
+                stroke={`var(--color-${metric.key})`}
+                strokeWidth={2}
+                dot={false}
+                strokeDasharray={metric.strokeDasharray}
+              />
+            ))}
           </LineChart>
         </ChartContainer>
       </CardContent>
